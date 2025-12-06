@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💖 Kylaamazing Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blush: #f8d7da;
+            --rose: #e91e63;
+            --gold: #d4af37;
+            --cream: #fdf6f0;
+            --deep-rose: #880e4f;
+            --soft-pink: #fce4ec;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            background: url('maze-background.jpg') center center / cover no-repeat fixed;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 0;
+        }
+
+        /* Floating hearts background */
+        .floating-hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .floating-heart {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0.7;
+            animation: float-up 15s infinite linear;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            color: var(--deep-rose);
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--rose);
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .collect-status {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .heart-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+            filter: grayscale(100%);
+        }
+
+        .heart-status.collected {
+            background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+            opacity: 1;
+            filter: grayscale(0%);
+            transform: scale(1.1);
+        }
+
+        .heart-status .emoji {
+            font-size: 1.5rem;
+        }
+
+        .instructions {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .key {
+            display: inline-block;
+            padding: 5px 10px;
+            background: white;
+            border: 2px solid var(--gold);
+            border-radius: 5px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #maze-canvas {
+            border: 4px solid var(--gold);
+            border-radius: 10px;
+            box-shadow: 
+                0 10px 40px rgba(233, 30, 99, 0.2),
+                inset 0 0 20px rgba(255,255,255,0.5);
+            background: white;
+        }
+
+        .timer {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--deep-rose);
+            margin-top: 1rem;
+        }
+
+        .restart-btn {
+            margin-top: 1rem;
+            padding: 12px 30px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, var(--rose) 0%, var(--deep-rose) 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+            letter-spacing: 1px;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
+        }
+
+        /* Collect popup overlay */
+        .collect-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .collect-overlay.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .collect-content {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: bounceIn 0.5s ease;
+            max-width: 90%;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .collect-emoji {
+            font-size: 80px;
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+
+        .collect-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--deep-rose);
+            margin: 1rem 0 0.5rem;
+        }
+
+        .collect-prize {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .collect-prize strong {
+            color: var(--rose);
+            display: block;
+            font-size: 1.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .continue-btn {
+            margin-top: 1.5rem;
+            padding: 12px 40px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, var(--gold) 0%, #b8962d 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        /* Win overlay */
+        .win-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .win-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .win-content {
+            text-align: center;
+            animation: scaleIn 0.5s ease 0.2s both;
+        }
+
+        @keyframes scaleIn {
+            from { 
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .win-hearts {
+            font-size: 60px;
+            margin-bottom: 1rem;
+        }
+
+        .win-heart {
+            font-size: 100px;
+            animation: heartbeat 0.6s infinite alternate;
+        }
+
+        @keyframes heartbeat {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
+
+        .win-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            color: var(--gold);
+            margin: 1rem 0;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .collected-prizes {
+            color: white;
+            font-size: 1.2rem;
+            margin: 1.5rem 0;
+            line-height: 2;
+        }
+
+        .collected-prizes div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .win-prize {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: white;
+            margin: 1rem 0;
+            line-height: 1.4;
+        }
+
+        .win-prize .amount {
+            font-size: 4rem;
+            color: var(--gold);
+            display: block;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
+            animation: glow 1.5s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
+            to { text-shadow: 0 0 40px rgba(212, 175, 55, 1), 0 0 60px rgba(212, 175, 55, 0.5); }
+        }
+
+        .sephora-text {
+            font-size: 2rem;
+            color: var(--blush);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+
+        .love-message {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            color: var(--soft-pink);
+            margin-top: 1.5rem;
+            font-style: italic;
+            letter-spacing: 1px;
+            animation: fadeInUp 1s ease 0.8s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--gold);
+            animation: confetti-fall 3s forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .mobile-controls {
+            display: none;
+            margin-top: 1rem;
+            gap: 5px;
+        }
+
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--rose) 0%, var(--deep-rose) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .mobile-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .subtitle { font-size: 1rem; }
+            .mobile-controls { display: block; }
+            .instructions { display: none; }
+            .game-container { padding: 1.5rem; }
+            .collect-status { gap: 0.5rem; }
+            .heart-status { padding: 4px 8px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating hearts background -->
+    <div class="floating-hearts" id="floating-hearts"></div>
+
+    <div class="game-container">
+        <h1>✨ Kylaamazing Game ✨</h1>
+        <p class="subtitle">Collect all the hearts to claim your prizes!</p>
+        
+        <div class="collect-status">
+            <div class="heart-status" id="status-matcha">
+                <span class="emoji">💚</span>
+            </div>
+            <div class="heart-status" id="status-dinner">
+                <span class="emoji">💙</span>
+            </div>
+            <div class="heart-status" id="status-christmas">
+                <span class="emoji">❤️</span>
+            </div>
+            <div class="heart-status" id="status-sephora">
+                <span class="emoji">💖</span>
+            </div>
+        </div>
+
+        <p class="instructions">
+            Use <span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span> arrow keys to move
+        </p>
+        
+        <canvas id="maze-canvas" width="500" height="500"></canvas>
+        
+        <div class="timer">Time: <span id="time">0</span>s</div>
+        
+        <button class="restart-btn" onclick="restartGame()">✨ New Maze ✨</button>
+
+        <!-- Mobile controls -->
+        <div class="mobile-controls">
+            <div class="mobile-row">
+                <button class="mobile-btn" onclick="movePlayer(0, -1)">↑</button>
+            </div>
+            <div class="mobile-row">
+                <button class="mobile-btn" onclick="movePlayer(-1, 0)">←</button>
+                <button class="mobile-btn" onclick="movePlayer(0, 1)">↓</button>
+                <button class="mobile-btn" onclick="movePlayer(1, 0)">→</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collect popup overlay -->
+    <div class="collect-overlay" id="collect-overlay">
+        <div class="collect-content">
+            <div class="collect-emoji" id="collect-emoji">💚</div>
+            <h2 class="collect-title">You Found a Heart!</h2>
+            <div class="collect-prize">
+                You've won:
+                <strong id="collect-prize-text">Matcha in the Morning</strong>
+            </div>
+            <button class="continue-btn" onclick="closeCollectPopup()">Keep Going! 💫</button>
+        </div>
+    </div>
+
+    <!-- Win overlay -->
+    <div class="win-overlay" id="win-overlay">
+        <div class="win-content">
+            <div class="win-hearts">💚 💙 ❤️ 💖</div>
+            <div class="win-heart">🎉</div>
+            <h2 class="win-title">YOU COLLECTED THEM ALL!</h2>
+            <div class="collected-prizes">
+                <div>💚 Matcha in the Morning</div>
+                <div>💙 French Dinner - like our time in France</div>
+                <div>❤️ Christmas Tree Light Event</div>
+            </div>
+            <div class="win-prize">
+                PLUS a
+                <span class="amount">$250</span>
+                <span class="sephora-text">Sephora</span>
+                Shopping Spree!
+            </div>
+            <p class="love-message">by Christian Morales who loves you 💕</p>
+            <button class="restart-btn" onclick="restartGame()" style="margin-top: 2rem;">
+                🎀 Play Again 🎀
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('maze-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Maze configuration
+        const cellSize = 25;
+        const rows = 20;
+        const cols = 20;
+        
+        let maze = [];
+        let player = { x: 0, y: 0 };
+        let goal = { x: cols - 1, y: rows - 1 };
+        let gameWon = false;
+        let startTime;
+        let timerInterval;
+
+        // Collectible hearts
+        const collectibles = [
+            { id: 'matcha', emoji: '💚', prize: 'Matcha in the Morning ☕', collected: false, x: 0, y: 0 },
+            { id: 'dinner', emoji: '💙', prize: 'French Dinner - like our time in France 🇫🇷', collected: false, x: 0, y: 0 },
+            { id: 'christmas', emoji: '❤️', prize: 'Christmas Tree Light Event 🎄', collected: false, x: 0, y: 0 }
+        ];
+
+        // Colors
+        const wallColor = '#880e4f';
+        const pathColor = '#fff5f8';
+        const playerColor = '#e91e63';
+
+        // Generate floating hearts
+        function createFloatingHearts() {
+            const container = document.getElementById('floating-hearts');
+            container.innerHTML = '';
+            const hearts = ['💕', '💗', '💖', '💝', '♥️', '💚', '💙', '❤️'];
+            
+            for (let i = 0; i < 25; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart';
+                heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDelay = Math.random() * 15 + 's';
+                heart.style.fontSize = (15 + Math.random() * 20) + 'px';
+                container.appendChild(heart);
+            }
+        }
+
+        // Place collectibles in random positions (not at start or goal)
+        function placeCollectibles() {
+            const usedPositions = new Set();
+            usedPositions.add('0,0'); // Start
+            usedPositions.add(`${cols-1},${rows-1}`); // Goal
+
+            collectibles.forEach(item => {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * cols);
+                    y = Math.floor(Math.random() * rows);
+                } while (usedPositions.has(`${x},${y}`));
+                
+                usedPositions.add(`${x},${y}`);
+                item.x = x;
+                item.y = y;
+                item.collected = false;
+            });
+
+            updateStatusDisplay();
+        }
+
+        function updateStatusDisplay() {
+            document.getElementById('status-matcha').classList.toggle('collected', collectibles[0].collected);
+            document.getElementById('status-dinner').classList.toggle('collected', collectibles[1].collected);
+            document.getElementById('status-christmas').classList.toggle('collected', collectibles[2].collected);
+            
+            const allCollected = collectibles.every(c => c.collected);
+            document.getElementById('status-sephora').classList.toggle('collected', allCollected && gameWon);
+        }
+
+        // Maze generation using recursive backtracking
+        function generateMaze() {
+            maze = [];
+            for (let y = 0; y < rows; y++) {
+                maze[y] = [];
+                for (let x = 0; x < cols; x++) {
+                    maze[y][x] = {
+                        visited: false,
+                        walls: { top: true, right: true, bottom: true, left: true }
+                    };
+                }
+            }
+
+            const stack = [];
+            let current = { x: 0, y: 0 };
+            maze[0][0].visited = true;
+
+            function getUnvisitedNeighbors(x, y) {
+                const neighbors = [];
+                if (y > 0 && !maze[y-1][x].visited) neighbors.push({ x, y: y-1, dir: 'top' });
+                if (x < cols-1 && !maze[y][x+1].visited) neighbors.push({ x: x+1, y, dir: 'right' });
+                if (y < rows-1 && !maze[y+1][x].visited) neighbors.push({ x, y: y+1, dir: 'bottom' });
+                if (x > 0 && !maze[y][x-1].visited) neighbors.push({ x: x-1, y, dir: 'left' });
+                return neighbors;
+            }
+
+            function removeWall(x1, y1, x2, y2, dir) {
+                if (dir === 'top') {
+                    maze[y1][x1].walls.top = false;
+                    maze[y2][x2].walls.bottom = false;
+                } else if (dir === 'right') {
+                    maze[y1][x1].walls.right = false;
+                    maze[y2][x2].walls.left = false;
+                } else if (dir === 'bottom') {
+                    maze[y1][x1].walls.bottom = false;
+                    maze[y2][x2].walls.top = false;
+                } else if (dir === 'left') {
+                    maze[y1][x1].walls.left = false;
+                    maze[y2][x2].walls.right = false;
+                }
+            }
+
+            while (true) {
+                const neighbors = getUnvisitedNeighbors(current.x, current.y);
+                
+                if (neighbors.length > 0) {
+                    const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    stack.push(current);
+                    removeWall(current.x, current.y, next.x, next.y, next.dir);
+                    current = { x: next.x, y: next.y };
+                    maze[current.y][current.x].visited = true;
+                } else if (stack.length > 0) {
+                    current = stack.pop();
+                } else {
+                    break;
+                }
+            }
+        }
+
+        function drawMaze() {
+            ctx.fillStyle = pathColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = wallColor;
+            ctx.lineWidth = 2;
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = maze[y][x];
+                    const px = x * cellSize;
+                    const py = y * cellSize;
+
+                    ctx.beginPath();
+                    if (cell.walls.top) {
+                        ctx.moveTo(px, py);
+                        ctx.lineTo(px + cellSize, py);
+                    }
+                    if (cell.walls.right) {
+                        ctx.moveTo(px + cellSize, py);
+                        ctx.lineTo(px + cellSize, py + cellSize);
+                    }
+                    if (cell.walls.bottom) {
+                        ctx.moveTo(px, py + cellSize);
+                        ctx.lineTo(px + cellSize, py + cellSize);
+                    }
+                    if (cell.walls.left) {
+                        ctx.moveTo(px, py);
+                        ctx.lineTo(px, py + cellSize);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            // Draw collectible hearts
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            collectibles.forEach(item => {
+                if (!item.collected) {
+                    ctx.fillText(item.emoji, item.x * cellSize + cellSize/2, item.y * cellSize + cellSize/2);
+                }
+            });
+
+            // Draw goal (pink heart - final prize)
+            ctx.font = '18px Arial';
+            ctx.fillText('💖', goal.x * cellSize + cellSize/2, goal.y * cellSize + cellSize/2);
+
+            // Draw player
+            ctx.beginPath();
+            ctx.fillStyle = playerColor;
+            ctx.arc(
+                player.x * cellSize + cellSize/2,
+                player.y * cellSize + cellSize/2,
+                cellSize/3,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            
+            // Add sparkle to player
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.beginPath();
+            ctx.arc(
+                player.x * cellSize + cellSize/2 - 4,
+                player.y * cellSize + cellSize/2 - 4,
+                3,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
+
+        function canMove(dx, dy) {
+            const cell = maze[player.y][player.x];
+            
+            if (dx === 1 && !cell.walls.right) return true;
+            if (dx === -1 && !cell.walls.left) return true;
+            if (dy === 1 && !cell.walls.bottom) return true;
+            if (dy === -1 && !cell.walls.top) return true;
+            
+            return false;
+        }
+
+        function showCollectPopup(item) {
+            document.getElementById('collect-emoji').textContent = item.emoji;
+            document.getElementById('collect-prize-text').textContent = item.prize;
+            document.getElementById('collect-overlay').classList.add('show');
+        }
+
+        function closeCollectPopup() {
+            document.getElementById('collect-overlay').classList.remove('show');
+        }
+
+        function movePlayer(dx, dy) {
+            if (gameWon) return;
+            
+            if (canMove(dx, dy)) {
+                player.x += dx;
+                player.y += dy;
+                
+                // Check for collectibles
+                collectibles.forEach(item => {
+                    if (!item.collected && player.x === item.x && player.y === item.y) {
+                        item.collected = true;
+                        updateStatusDisplay();
+                        showCollectPopup(item);
+                    }
+                });
+
+                drawMaze();
+                
+                // Check win condition - must collect all hearts AND reach goal
+                const allCollected = collectibles.every(c => c.collected);
+                if (player.x === goal.x && player.y === goal.y && allCollected) {
+                    winGame();
+                } else if (player.x === goal.x && player.y === goal.y && !allCollected) {
+                    // Show hint that they need to collect all hearts first
+                    const remaining = collectibles.filter(c => !c.collected).length;
+                    alert(`Almost there! Collect ${remaining} more heart${remaining > 1 ? 's' : ''} first! 💕`);
+                }
+            }
+        }
+
+        function winGame() {
+            gameWon = true;
+            clearInterval(timerInterval);
+            updateStatusDisplay();
+            
+            document.getElementById('win-overlay').classList.add('show');
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const colors = ['#e91e63', '#d4af37', '#f8d7da', '#880e4f', '#fce4ec', '#ff69b4', '#4CAF50', '#2196F3', '#f44336'];
+            
+            for (let i = 0; i < 150; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = (5 + Math.random() * 10) + 'px';
+                    confetti.style.height = (5 + Math.random() * 10) + 'px';
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 20);
+            }
+        }
+
+        function restartGame() {
+            gameWon = false;
+            player = { x: 0, y: 0 };
+            
+            document.getElementById('win-overlay').classList.remove('show');
+            document.getElementById('collect-overlay').classList.remove('show');
+            
+            generateMaze();
+            placeCollectibles();
+            drawMaze();
+            
+            clearInterval(timerInterval);
+            startTime = Date.now();
+            document.getElementById('time').textContent = '0';
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('time').textContent = elapsed;
+            }, 1000);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            // Don't move if popup is showing
+            if (document.getElementById('collect-overlay').classList.contains('show')) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    closeCollectPopup();
+                    e.preventDefault();
+                }
+                return;
+            }
+
+            switch(e.key) {
+                case 'ArrowUp': movePlayer(0, -1); e.preventDefault(); break;
+                case 'ArrowDown': movePlayer(0, 1); e.preventDefault(); break;
+                case 'ArrowLeft': movePlayer(-1, 0); e.preventDefault(); break;
+                case 'ArrowRight': movePlayer(1, 0); e.preventDefault(); break;
+            }
+        });
+
+        // Initialize
+        createFloatingHearts();
+        restartGame();
+    </script>
+</body>
+</html>
